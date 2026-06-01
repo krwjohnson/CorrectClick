@@ -1,0 +1,57 @@
+name: CorrectClick
+options:
+  bundleIdPrefix: com.correctclick
+  deploymentTarget:
+    macOS: "13.0"
+  generateEmptyDirectories: true
+  createIntermediateGroups: true
+
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    MACOSX_DEPLOYMENT_TARGET: "13.0"
+    DEVELOPMENT_TEAM: ""
+    ENABLE_HARDENED_RUNTIME: YES
+    CODE_SIGN_STYLE: Automatic
+
+targets:
+
+  CorrectClick:
+    type: application
+    platform: macOS
+    deploymentTarget: "13.0"
+    sources:
+      - path: CorrectClick
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.correctclick.CorrectClick
+        INFOPLIST_FILE: CorrectClick/Info.plist
+        CODE_SIGN_ENTITLEMENTS: CorrectClick/CorrectClick.entitlements
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+    dependencies:
+      - target: CorrectClickExtension
+        embed: true
+        buildPhase: copyFiles
+        copy:
+          destination: plugins
+
+  CorrectClickExtension:
+    type: app-extension
+    platform: macOS
+    deploymentTarget: "13.0"
+    sources:
+      - path: CorrectClickExtension
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.correctclick.CorrectClick.FinderSyncExtension
+        INFOPLIST_FILE: CorrectClickExtension/Info.plist
+        CODE_SIGN_ENTITLEMENTS: CorrectClickExtension/CorrectClickExtension.entitlements
+    postBuildScripts:
+      - name: Enable Extension
+        script: |
+          # macOS registers each new build as a new plugin instance and leaves it
+          # in pending-approval state. Force-enable it so Finder picks it up immediately.
+          BUNDLE_ID=$(defaults read "${BUILT_PRODUCTS_DIR}/${WRAPPER_NAME}/Contents/Info" CFBundleIdentifier 2>/dev/null)
+          if [ -n "$BUNDLE_ID" ]; then
+            pluginkit -e use -i "$BUNDLE_ID" || true
+          fi

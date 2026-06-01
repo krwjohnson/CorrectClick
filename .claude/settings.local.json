@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(xcodegen --version)",
+      "Bash(swift --version)",
+      "Bash(xcodebuild -version)",
+      "Bash(brew install *)",
+      "Bash(pluginkit -m -v)",
+      "Bash(pluginkit -v)"
+    ]
+  }
+}
