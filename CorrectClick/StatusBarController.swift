@@ -26,6 +26,16 @@ final class StatusBarController {
 
         menu.addItem(.separator())
 
+        let uninstallItem = NSMenuItem(
+            title: "Uninstall CorrectClick…",
+            action: #selector(uninstall),
+            keyEquivalent: ""
+        )
+        uninstallItem.target = self
+        menu.addItem(uninstallItem)
+
+        menu.addItem(.separator())
+
         let quitItem = NSMenuItem(
             title: "Quit CorrectClick",
             action: #selector(NSApplication.terminate(_:)),
@@ -38,5 +48,42 @@ final class StatusBarController {
 
     @objc private func openExtensionPreferences() {
         OnboardingWindowController.shared.show()
+    }
+
+    @objc private func uninstall() {
+        let alert = NSAlert()
+        alert.messageText = "Uninstall CorrectClick?"
+        alert.informativeText = "This opens Terminal to remove CorrectClick, its Finder extension, and its saved settings. You'll get a chance to confirm again there."
+        alert.addButton(withTitle: "Continue")
+        alert.addButton(withTitle: "Cancel")
+        alert.alertStyle = .warning
+
+        NSApp.activate(ignoringOtherApps: true)
+        guard alert.runModal() == .alertFirstButtonReturn else { return }
+
+        guard let scriptURL = Bundle.main.url(forResource: "Uninstall CorrectClick", withExtension: "command") else {
+            return
+        }
+
+        // NSWorkspace.open(_:) can't hand a document to another app under App
+        // Sandbox ("not allowed to open documents in Terminal"), so script
+        // Terminal directly via Apple Events instead. The path is quoted for
+        // the shell (it contains spaces), then that whole quoted command is
+        // escaped again for the AppleScript string literal.
+        let shellCommand = "\"\(scriptURL.path)\""
+        let escapedForAppleScript = shellCommand.replacingOccurrences(of: "\"", with: "\\\"")
+        let source = """
+        tell application "Terminal"
+            activate
+            do script "\(escapedForAppleScript)"
+        end tell
+        """
+        if let script = NSAppleScript(source: source) {
+            var error: NSDictionary?
+            script.executeAndReturnError(&error)
+            if let error {
+                NSLog("Failed to launch uninstaller in Terminal: \(error)")
+            }
+        }
     }
 }

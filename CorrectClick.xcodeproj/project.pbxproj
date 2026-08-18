@@ -136,6 +136,7 @@
 				03D32A3F5EA801ACE9980DF2 /* Sources */,
 				DA7F8915885DCB74B0EDD08D /* Resources */,
 				1C1DD7D6BFAD8AA9597D0034 /* Embed Dependencies */,
+				DF66576DFBFFABAD8E156771 /* Bundle Uninstaller */,
 			);
 			buildRules = (
 			);
@@ -225,6 +226,24 @@
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "# macOS registers each new build as a new plugin instance and leaves it\n# in pending-approval state. Force-enable it so Finder picks it up immediately.\nBUNDLE_ID=$(defaults read \"${BUILT_PRODUCTS_DIR}/${WRAPPER_NAME}/Contents/Info\" CFBundleIdentifier 2>/dev/null)\nif [ -n \"$BUNDLE_ID\" ]; then\n  pluginkit -e use -i \"$BUNDLE_ID\" || true\nfi\n";
+		};
+		DF66576DFBFFABAD8E156771 /* Bundle Uninstaller */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "Bundle Uninstaller";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "# Ships scripts/uninstall.sh inside the app as a Resource so it stays\n# available on disk after the install DMG is thrown away. Renamed to\n# .command so Terminal executes it on double-click / NSWorkspace.open.\nDEST=\"${BUILT_PRODUCTS_DIR}/${WRAPPER_NAME}/Contents/Resources/Uninstall CorrectClick.command\"\nmkdir -p \"$(dirname \"$DEST\")\"\ncp \"${SRCROOT}/scripts/uninstall.sh\" \"$DEST\"\nchmod +x \"$DEST\"\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 

@@ -34,6 +34,16 @@ targets:
         buildPhase: copyFiles
         copy:
           destination: plugins
+    postBuildScripts:
+      - name: Bundle Uninstaller
+        script: |
+          # Ships scripts/uninstall.sh inside the app as a Resource so it stays
+          # available on disk after the install DMG is thrown away. Renamed to
+          # .command so Terminal executes it on double-click / NSWorkspace.open.
+          DEST="${BUILT_PRODUCTS_DIR}/${WRAPPER_NAME}/Contents/Resources/Uninstall CorrectClick.command"
+          mkdir -p "$(dirname "$DEST")"
+          cp "${SRCROOT}/scripts/uninstall.sh" "$DEST"
+          chmod +x "$DEST"
 
   CorrectClickExtension:
     type: app-extension

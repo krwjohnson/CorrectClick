@@ -48,6 +48,11 @@ if [ ! -d "$EXPORT_DIR" ]; then
   exit 1
 fi
 
+# Also drop a loose copy of the uninstaller in the DMG itself (not just inside
+# the app bundle), as a fallback for when the installed app won't launch.
+cp "$REPO/scripts/uninstall.sh" "$EXPORT_DIR/Uninstall CorrectClick.command"
+chmod +x "$EXPORT_DIR/Uninstall CorrectClick.command"
+
 # Remove previous DMG if it exists
 rm -f "$DMG_OUT"
 

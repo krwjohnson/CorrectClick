@@ -47,11 +47,16 @@ See `developer_documentation/` for deeper background: architecture, the Finder S
 | `CorrectClickExtension/FileCreator.swift` | File creation logic, unique name generation, rename-mode trigger |
 | `CorrectClickExtension/CorrectClickExtension.entitlements` | Sandbox + filesystem temporary exception |
 | `CorrectClick/AppDelegate.swift` | First-launch: opens System Preferences → Extensions |
-| `CorrectClick/StatusBarController.swift` | Menu-bar icon with "Enable Extension…" and Quit |
+| `CorrectClick/StatusBarController.swift` | Menu-bar icon: "Enable Extension…", "Uninstall CorrectClick…", Quit |
+| `scripts/uninstall.sh` | Uninstaller — quits the app, disables/unregisters the extension, removes `/Applications/CorrectClick.app` and saved state. Bundled into the app at build time as `Contents/Resources/Uninstall CorrectClick.command` (see `project.yml`'s "Bundle Uninstaller" script) and also dropped loose into the DMG by `build_dmg.sh`, so it's reachable both from the running app and from the installer disk image. |
 
 ## Entitlements notes
-- Parent app: sandboxed, no special entitlements needed
+- Parent app: sandboxed. Also holds `com.apple.security.temporary-exception.apple-events` scoped to `com.apple.Terminal` (+ `NSAppleEventsUsageDescription` in Info.plist) so the "Uninstall CorrectClick…" menu item can script Terminal to run the bundled uninstaller — `NSWorkspace.open()` alone can't hand a document to another app under App Sandbox ("not allowed to open documents in Terminal"), so it uses `NSAppleScript` + `do script` instead. First use prompts the user for Terminal-automation permission.
 - Extension: sandboxed (`app-sandbox = true`) + `temporary-exception.files.absolute-path.read-write` with path `/` — this grants full filesystem read-write within the sandbox and is valid for notarised direct-download distribution. **App Store distribution would require a different architecture** (XPC relay: extension calls parent app via XPC, parent app holds user-selected file access and does the actual write).
+
+## Uninstaller notes
+- `scripts/uninstall.sh` can't fully clear `~/Library/Containers/com.correctclick.CorrectClick` when run from a plain shell/Terminal — macOS's TCC blocks that even for the owning user unless the calling app has Full Disk Access. The script warns and continues rather than aborting; the app itself is still fully removed. This is a real platform constraint, not a bug to "fix" — documented so it isn't rediscovered.
+- Any shell command embedded in an AppleScript `do script` sent to Terminal needs its own shell-level quoting (separate from the AppleScript string escaping) — the bundled `.command` path contains a space and silently broke without it.
 
 ## macOS 26 pluginkit quirk
 On macOS 26, each new debug build is registered as a new plugin instance in a pending-approval state, even if the extension is already enabled in System Settings. A post-build script in `project.yml` runs `pluginkit -e use -i <bundle-id>` automatically after each build to approve it. Without this, the extension runs but Finder ignores it (the menu does not appear).

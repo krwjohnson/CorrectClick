@@ -5,5 +5,10 @@
     <!-- Sandboxed parent app — only needs to open System Preferences -->
     <key>com.apple.security.app-sandbox</key>
     <true/>
+    <!-- Lets the Uninstall menu item script Terminal to run the bundled uninstaller -->
+    <key>com.apple.security.temporary-exception.apple-events</key>
+    <array>
+        <string>com.apple.Terminal</string>
+    </array>
 </dict>
 </plist>
