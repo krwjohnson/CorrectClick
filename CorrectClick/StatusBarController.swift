@@ -37,6 +37,6 @@ final class StatusBarController {
     }
 
     @objc private func openExtensionPreferences() {
-        AppDelegate.openExtensionPreferences()
+        OnboardingWindowController.shared.show()
     }
 }

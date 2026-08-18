@@ -25,17 +25,20 @@ SourceKit reports errors for `FIFinderSync`, `FIFinderSyncController`, `FIMenuKi
 - Files are created with auto-incrementing names (Untitled, Untitled 2, etc.)
 - After creation, Finder selects the file and enters rename mode
 
+## Known limitations
+- **No menu in iCloud Drive / OneDrive / Dropbox folders.** Finder Sync extensions are exclusive per directory — the first extension registered for a folder (iCloud's or the cloud provider's own `FIFinderSync`/File Provider integration) is the only one Finder will invoke there. There is no API-level workaround; `directoryURLs` cannot override another provider's claim on a directory. (Confirmed via Apple Developer Forums threads on this exact issue, Aug 2026.) Not planned to be fixed — documented here so it isn't rediscovered as a bug.
+
 ## To do (shipping checklist)
-1. **Icons** — app currently has no icon; needed before notarisation
-   - App icon (1024×1024 source, all sizes in AppIcon.appiconset)
-   - Menu bar template image (22pt, black/transparent, @1x and @2x)
-2. **Notarise** — required for Gatekeeper on other Macs
-   - Requires Apple Developer account
+1. **Icons** — done. `AppIcon.appiconset` has all sizes; generated via `scripts/generate_icon.swift` / `scripts/build_icns.sh`.
+2. **DMG installer** — done. `scripts/build_dmg.sh` archives, exports, and packages with `create-dmg` (custom background at `scripts/dmg_background.png`).
+3. **First-run onboarding** — done, tested working, needs a commit. `CorrectClick/OnboardingView.swift` + `CorrectClick/OnboardingWindowController.swift` replace the bare System Settings launch with a welcome window; `AppDelegate.swift` and `StatusBarController.swift` now route through `OnboardingWindowController.shared`. While testing this, found and fixed a pre-existing bug: plain `@main` on the `NSApplicationDelegate` class never wires `NSApp.delegate` (that auto-wiring was specific to the deprecated `@NSApplicationMain`), so `applicationDidFinishLaunching` was never called — meaning the status-bar icon has never worked, only the Finder submenu (which lives in the separate extension process and has its own lifecycle). Fixed by adding `CorrectClick/main.swift` that explicitly does `NSApplication.shared.delegate = AppDelegate(); NSApplication.shared.run()`, and removing `@main` from `AppDelegate.swift`.
+4. **Notarise** — not started. Requires:
+   - Apple Developer account + Team ID set in `project.yml`'s `DEVELOPMENT_TEAM` (currently blank)
+   - `scripts/ExportOptions.plist` switched from `method: development` to `developer-id`
    - `xcrun notarytool submit` + staple ticket to app bundle
-3. **DMG installer** — standard direct-download delivery format
-   - `brew install create-dmg` then script the build
-4. **First-run onboarding** — replace the bare System Settings launch with a small welcome window explaining how to enable the extension
-5. **Sparkle auto-update** — standard for direct-download Mac apps (add after first public release)
+5. **Sparkle auto-update** — not started; standard for direct-download Mac apps (add after first public release)
+
+See `developer_documentation/` for deeper background: architecture, the Finder Sync extension, sandboxing/entitlements, file creation, build/debug, and distribution (one doc per topic, `01`–`06`).
 
 ## Key files
 | File | Purpose |

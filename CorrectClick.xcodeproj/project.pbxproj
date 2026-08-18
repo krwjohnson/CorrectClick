@@ -7,13 +7,16 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		08FCF63E58A3A41F16E908C8 /* OnboardingWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 895E2E33A8AEEC07C0C16E61 /* OnboardingWindowController.swift */; };
 		2974D1E892093F2AA776F853 /* FinderSync.swift in Sources */ = {isa = PBXBuildFile; fileRef = F169998938A1CAA9C2AA5104 /* FinderSync.swift */; };
 		36170D0F379530DAEF9199C3 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49A48482981922A1444252EF /* AppDelegate.swift */; };
 		7EB8E9DD930151468ADA198E /* FileCreator.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9F6161FB0B6AF290490BB77 /* FileCreator.swift */; };
 		849D4FB64C9916A452A0184D /* CorrectClickExtension.appex in Embed Dependencies */ = {isa = PBXBuildFile; fileRef = BC6D7684265349B99B643C8D /* CorrectClickExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		87E9C1F30DE2AA5E89625B59 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = C277290B5175C824F17FB493 /* Assets.xcassets */; };
+		C14D961E856A78F23FAAAE49 /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D31C3BA953E2D052D2F65C1D /* OnboardingView.swift */; };
 		C5F87EDD200F36A89BE860C2 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = AF21A3D352551E23D6F6974E /* Assets.xcassets */; };
 		E9C7890A5E39572B17D7CA0E /* StatusBarController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07D6CEA71FB2C8648DDB72A0 /* StatusBarController.swift */; };
+		F654E6E5A80F8538F66D3D43 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF3457EB028B6AD43B374408 /* main.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -45,6 +48,7 @@
 		07D6CEA71FB2C8648DDB72A0 /* StatusBarController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusBarController.swift; sourceTree = "<group>"; };
 		49A48482981922A1444252EF /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		886EFD53481848F8D36866C0 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		895E2E33A8AEEC07C0C16E61 /* OnboardingWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingWindowController.swift; sourceTree = "<group>"; };
 		A9F6161FB0B6AF290490BB77 /* FileCreator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileCreator.swift; sourceTree = "<group>"; };
 		AF21A3D352551E23D6F6974E /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		BC6D7684265349B99B643C8D /* CorrectClickExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = CorrectClickExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -52,7 +56,9 @@
 		C277290B5175C824F17FB493 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		C87DD02B8ED5D48DDF326583 /* CorrectClickExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = CorrectClickExtension.entitlements; sourceTree = "<group>"; };
 		D1B7AA77F5F3618B186143CA /* CorrectClick.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = CorrectClick.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		D31C3BA953E2D052D2F65C1D /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
 		F169998938A1CAA9C2AA5104 /* FinderSync.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FinderSync.swift; sourceTree = "<group>"; };
+		FF3457EB028B6AD43B374408 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -84,6 +90,9 @@
 				C277290B5175C824F17FB493 /* Assets.xcassets */,
 				BD73EA87EB2112C2B66F0415 /* CorrectClick.entitlements */,
 				886EFD53481848F8D36866C0 /* Info.plist */,
+				FF3457EB028B6AD43B374408 /* main.swift */,
+				D31C3BA953E2D052D2F65C1D /* OnboardingView.swift */,
+				895E2E33A8AEEC07C0C16E61 /* OnboardingWindowController.swift */,
 				07D6CEA71FB2C8648DDB72A0 /* StatusBarController.swift */,
 			);
 			path = CorrectClick;
@@ -150,11 +159,11 @@
 				LastUpgradeCheck = 1430;
 				TargetAttributes = {
 					447631655D264D3F32EAAB90 = {
-						DevelopmentTeam = H9YV7HM38M;
+						DevelopmentTeam = "";
 						ProvisioningStyle = Automatic;
 					};
 					FE074680AB77A4F4FB7AAA7F = {
-						DevelopmentTeam = H9YV7HM38M;
+						DevelopmentTeam = "";
 						ProvisioningStyle = Automatic;
 					};
 				};
@@ -225,7 +234,10 @@
 			buildActionMask = 2147483647;
 			files = (
 				36170D0F379530DAEF9199C3 /* AppDelegate.swift in Sources */,
+				C14D961E856A78F23FAAAE49 /* OnboardingView.swift in Sources */,
+				08FCF63E58A3A41F16E908C8 /* OnboardingWindowController.swift in Sources */,
 				E9C7890A5E39572B17D7CA0E /* StatusBarController.swift in Sources */,
+				F654E6E5A80F8538F66D3D43 /* main.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -319,7 +331,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
-				DEVELOPMENT_TEAM = H9YV7HM38M;
+				DEVELOPMENT_TEAM = "";
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
@@ -395,7 +407,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = dwarf;
-				DEVELOPMENT_TEAM = H9YV7HM38M;
+				DEVELOPMENT_TEAM = "";
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
