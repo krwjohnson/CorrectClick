@@ -73,9 +73,20 @@ cp -R "$APP_SRC" "$DMG_SRC_DIR/"
 cp "$REPO/scripts/uninstall.sh" "$DMG_SRC_DIR/Uninstall CorrectClick.command"
 chmod +x "$DMG_SRC_DIR/Uninstall CorrectClick.command"
 
+# Build the DMG's volume icon on the fly from the already-committed asset
+# catalog (scripts/iconbuild/ is gitignored — a local-only intermediate — so
+# this can't depend on it existing, e.g. on a fresh CI checkout). iconutil
+# requires the source directory to be named *.iconset, so copy into one.
+VOLICONSET="$REPO/build/AppIcon.iconset"
+VOLICON="$REPO/build/AppIcon.icns"
+rm -rf "$VOLICONSET"
+mkdir -p "$VOLICONSET"
+cp "$REPO"/CorrectClick/Assets.xcassets/AppIcon.appiconset/icon_*.png "$VOLICONSET/"
+iconutil -c icns "$VOLICONSET" -o "$VOLICON"
+
 create-dmg \
   --volname "CorrectClick" \
-  --volicon "$REPO/scripts/iconbuild/AppIcon.icns" \
+  --volicon "$VOLICON" \
   --window-pos 200 150 \
   --window-size 560 380 \
   --icon-size 128 \
