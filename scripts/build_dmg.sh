@@ -1,20 +1,31 @@
 #!/bin/bash
 # Builds a release archive, exports the app, and packages it as a DMG.
 # Usage: ./scripts/build_dmg.sh
+#   VERSION env var overrides the version to build (defaults to the
+#   repo-root VERSION file, e.g. for CI). Written into CFBundleShortVersionString
+#   / CFBundleVersion via MARKETING_VERSION / CURRENT_PROJECT_VERSION.
 #
 # Prerequisites:
-#   - Xcode with a valid Development Team set in the project
+#   - xcodegen: brew install xcodegen
 #   - create-dmg: brew install create-dmg
 #
-# To notarise after this script, see developer_documentation/06-distribution.md.
+# Without a DEVELOPMENT_TEAM configured in project.yml, exportArchive can't
+# produce a signed export ("No Team Found in Archive") — this script detects
+# that and falls back to the ad-hoc-signed app straight from the archive, so
+# local/CI builds keep working before notarisation is set up. See
+# developer_documentation/06-distribution.md for notarising a real release.
 
-set -e
+set -euo pipefail
 REPO="$(cd "$(dirname "$0")/.." && pwd)"
-VERSION="1.0.0"
+VERSION="${VERSION:-$(cat "$REPO/VERSION" 2>/dev/null || echo "1.0.0")}"
 ARCHIVE="$REPO/build/CorrectClick.xcarchive"
 EXPORT_DIR="$REPO/build/export"
+DMG_SRC_DIR="$REPO/build/dmg_source"
 DMG_OUT="$REPO/build/CorrectClick-${VERSION}.dmg"
 
+# Start from a clean slate every time — a failed step must never leave a
+# stale directory behind for a later step to mistake for fresh output.
+rm -rf "$ARCHIVE" "$EXPORT_DIR" "$DMG_SRC_DIR" "$DMG_OUT"
 mkdir -p "$REPO/build"
 
 echo "=== Generating Xcode project ==="
@@ -22,39 +33,45 @@ cd "$REPO"
 xcodegen generate
 
 echo ""
-echo "=== Archiving (Release) ==="
+echo "=== Archiving (Release, version $VERSION) ==="
 xcodebuild \
   -project CorrectClick.xcodeproj \
   -scheme CorrectClick \
   -configuration Release \
+  MARKETING_VERSION="$VERSION" \
+  CURRENT_PROJECT_VERSION="$VERSION" \
   -archivePath "$ARCHIVE" \
-  archive \
-  | xcpretty 2>/dev/null || cat  # fall back to raw output if xcpretty not installed
+  archive
 
 echo ""
 echo "=== Exporting ==="
-xcodebuild \
+if xcodebuild \
   -exportArchive \
   -archivePath "$ARCHIVE" \
   -exportPath "$EXPORT_DIR" \
-  -exportOptionsPlist "$REPO/scripts/ExportOptions.plist" \
-  | xcpretty 2>/dev/null || cat
+  -exportOptionsPlist "$REPO/scripts/ExportOptions.plist"; then
+  APP_SRC="$EXPORT_DIR/CorrectClick.app"
+else
+  echo ""
+  echo "exportArchive failed (likely no DEVELOPMENT_TEAM configured in project.yml yet)."
+  echo "Falling back to the ad-hoc-signed app directly from the archive."
+  APP_SRC="$ARCHIVE/Products/Applications/CorrectClick.app"
+fi
 
-echo ""
-echo "=== Building DMG ==="
-
-if [ ! -d "$EXPORT_DIR" ]; then
-  echo "ERROR: Export directory not found — archive/export step failed. Aborting DMG build."
+if [ ! -d "$APP_SRC" ]; then
+  echo "ERROR: no built app found at $APP_SRC. Aborting DMG build."
   exit 1
 fi
 
+echo ""
+echo "=== Building DMG ==="
+mkdir -p "$DMG_SRC_DIR"
+cp -R "$APP_SRC" "$DMG_SRC_DIR/"
+
 # Also drop a loose copy of the uninstaller in the DMG itself (not just inside
 # the app bundle), as a fallback for when the installed app won't launch.
-cp "$REPO/scripts/uninstall.sh" "$EXPORT_DIR/Uninstall CorrectClick.command"
-chmod +x "$EXPORT_DIR/Uninstall CorrectClick.command"
-
-# Remove previous DMG if it exists
-rm -f "$DMG_OUT"
+cp "$REPO/scripts/uninstall.sh" "$DMG_SRC_DIR/Uninstall CorrectClick.command"
+chmod +x "$DMG_SRC_DIR/Uninstall CorrectClick.command"
 
 create-dmg \
   --volname "CorrectClick" \
@@ -67,7 +84,7 @@ create-dmg \
   --app-drop-link 420 185 \
   --background "$REPO/scripts/dmg_background.png" \
   "$DMG_OUT" \
-  "$EXPORT_DIR/"
+  "$DMG_SRC_DIR/"
 
 echo ""
 echo "=== Done ==="

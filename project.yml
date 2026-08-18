@@ -13,6 +13,11 @@ settings:
     DEVELOPMENT_TEAM: ""  # Set your Apple Developer Team ID here
     ENABLE_HARDENED_RUNTIME: YES
     CODE_SIGN_STYLE: Automatic
+    # Local/dev default. Release builds (scripts/build_dmg.sh, CI) override
+    # these via `xcodebuild ... MARKETING_VERSION=X CURRENT_PROJECT_VERSION=X`,
+    # sourced from the VERSION file at the repo root.
+    MARKETING_VERSION: "1.0.0"
+    CURRENT_PROJECT_VERSION: "1"
 
 targets:
 
