@@ -21,7 +21,7 @@ SourceKit reports errors for `FIFinderSync`, `FIFinderSyncController`, `FIMenuKi
 ## Current status
 **Feature complete.** The extension is working:
 - Right-clicking any folder in Finder shows a "CorrectClick" submenu
-- All three actions are implemented: New Text File, New Text File from Clipboard, New PNG from Clipboard
+- File-creation actions: New Text File, New JSON File, New Python File, New CSV File, New Markdown File, New Shell Script (created executable), New YAML File, New HTML File (minimal boilerplate) — plus New Text File from Clipboard and New PNG from Clipboard
 - Files are created with auto-incrementing names (Untitled, Untitled 2, etc.)
 - After creation, Finder selects the file and enters rename mode
 

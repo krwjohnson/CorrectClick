@@ -30,6 +30,55 @@ enum FileCreator {
         notify(body: "Clipboard doesn't contain usable text.")
     }
 
+    static func createJSONFile(in directory: URL) {
+        let url = uniqueURL(in: directory, stem: "Untitled", ext: "json")
+        write(Data("{}\n".utf8), to: url)
+    }
+
+    static func createPythonFile(in directory: URL) {
+        let url = uniqueURL(in: directory, stem: "Untitled", ext: "py")
+        write(Data("#!/usr/bin/env python3\n".utf8), to: url)
+    }
+
+    static func createCSVFile(in directory: URL) {
+        let url = uniqueURL(in: directory, stem: "Untitled", ext: "csv")
+        write(Data(), to: url)
+    }
+
+    static func createMarkdownFile(in directory: URL) {
+        let url = uniqueURL(in: directory, stem: "Untitled", ext: "md")
+        write(Data(), to: url)
+    }
+
+    static func createShellScript(in directory: URL) {
+        let url = uniqueURL(in: directory, stem: "Untitled", ext: "sh")
+        write(Data("#!/bin/zsh\n".utf8), to: url)
+        try? FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: url.path)
+    }
+
+    static func createYAMLFile(in directory: URL) {
+        let url = uniqueURL(in: directory, stem: "Untitled", ext: "yaml")
+        write(Data(), to: url)
+    }
+
+    static func createHTMLFile(in directory: URL) {
+        let url = uniqueURL(in: directory, stem: "Untitled", ext: "html")
+        let boilerplate = """
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <title></title>
+        </head>
+        <body>
+
+        </body>
+        </html>
+
+        """
+        write(Data(boilerplate.utf8), to: url)
+    }
+
     static func createPNGFromClipboard(in directory: URL) {
         let pasteboard = NSPasteboard.general
 
