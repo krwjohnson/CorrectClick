@@ -52,3 +52,4 @@ jobs:
             "build/CorrectClick-${{ steps.version.outputs.version }}.dmg" \
             --title "CorrectClick v${{ steps.version.outputs.version }}" \
             --notes "Unsigned, ad-hoc build (notarisation not yet set up — see CLAUDE.md). Gatekeeper will require right-click > Open on first launch."
+
