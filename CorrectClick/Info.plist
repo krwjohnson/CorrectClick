@@ -30,5 +30,24 @@
 	<string>NSApplication</string>
 	<key>NSUserNotificationAlertStyle</key>
 	<string>alert</string>
+
+	<!-- Sparkle (Epic 3 — auto-update). Feed is served from the repo's main
+	     branch via raw.githubusercontent.com, which only works because the
+	     repo is public — see CLAUDE.md's "Auto-update notes". -->
+	<key>SUFeedURL</key>
+	<string>https://raw.githubusercontent.com/krwjohnson/CorrectClick/main/appcast.xml</string>
+	<key>SUPublicEDKey</key>
+	<string>bgOrFA6+IkisIUXSwlt9OkHTg/vo3Jo8rPlzjSqoJcA=</string>
+	<key>SUEnableAutomaticChecks</key>
+	<true/>
+	<key>SUScheduledCheckInterval</key>
+	<integer>86400</integer>
+	<!-- Sandboxed-app requirements (both required so the app itself never
+	     needs its own network entitlement — Sparkle's bundled Downloader.xpc
+	     and Installer.xpc services handle the fetch and install instead). -->
+	<key>SUEnableInstallerLauncherService</key>
+	<true/>
+	<key>SUEnableDownloaderService</key>
+	<true/>
 </dict>
 </plist>

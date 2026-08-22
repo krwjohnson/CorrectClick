@@ -79,6 +79,74 @@ enum FileCreator {
         write(Data(boilerplate.utf8), to: url)
     }
 
+    static func createTOMLFile(in directory: URL) {
+        let url = uniqueURL(in: directory, stem: "Untitled", ext: "toml")
+        write(Data(), to: url)
+    }
+
+    static func createXMLFile(in directory: URL) {
+        let url = uniqueURL(in: directory, stem: "Untitled", ext: "xml")
+        write(Data("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n".utf8), to: url)
+    }
+
+    static func createGitignoreFile(in directory: URL) {
+        let url = uniqueURL(in: directory, stem: ".gitignore", ext: "")
+        write(Data(), to: url)
+    }
+
+    static func createLicenseFile(in directory: URL) {
+        let url = uniqueURL(in: directory, stem: "LICENSE", ext: "")
+        write(Data(), to: url)
+    }
+
+    static func createEnvFile(in directory: URL) {
+        let url = uniqueURL(in: directory, stem: ".env", ext: "")
+        write(Data(), to: url)
+    }
+
+    static func createDockerfile(in directory: URL) {
+        let url = uniqueURL(in: directory, stem: "Dockerfile", ext: "")
+        write(Data("FROM \n".utf8), to: url)
+    }
+
+    static func createSwiftFile(in directory: URL) {
+        let url = uniqueURL(in: directory, stem: "Untitled", ext: "swift")
+        write(Data(), to: url)
+    }
+
+    static func createSQLFile(in directory: URL) {
+        let url = uniqueURL(in: directory, stem: "Untitled", ext: "sql")
+        write(Data(), to: url)
+    }
+
+    static func createPlistFile(in directory: URL) {
+        let url = uniqueURL(in: directory, stem: "Untitled", ext: "plist")
+        let boilerplate = """
+        <?xml version="1.0" encoding="UTF-8"?>
+        <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+        <plist version="1.0">
+        <dict>
+        </dict>
+        </plist>
+
+        """
+        write(Data(boilerplate.utf8), to: url)
+    }
+
+    static func createFromUserTemplate(_ template: UserTemplate, in directory: URL) {
+        let stem = template.fileNameStem
+        let url = uniqueURL(in: directory, stem: stem, ext: template.normalizedExtension)
+
+        let context = TemplateContext(
+            date: Date(),
+            author: AuthorPreferenceStore.load(),
+            clipboardText: NSPasteboard.general.string(forType: .string),
+            filenameAtCreation: stem
+        )
+        let content = TemplateVariableSubstitution.resolve(template.starterContent, context: context)
+        write(Data(content.utf8), to: url)
+    }
+
     static func createPNGFromClipboard(in directory: URL) {
         let pasteboard = NSPasteboard.general
 
@@ -111,13 +179,18 @@ enum FileCreator {
         }
     }
 
-    /// Returns a URL that doesn't yet exist, incrementing a counter as needed.
+    /// Returns a URL that doesn't yet exist, incrementing a counter as
+    /// needed. Pass an empty `ext` for extensionless/dotfile names (e.g.
+    /// `stem: "LICENSE", ext: ""` or `stem: ".gitignore", ext: ""`) — the
+    /// counter is still appended before the name would otherwise collide,
+    /// matching Finder's own "New Folder" numbering.
     static func uniqueURL(in directory: URL, stem: String, ext: String) -> URL {
         let fm = FileManager.default
-        var candidate = directory.appendingPathComponent("\(stem).\(ext)")
+        let suffix = ext.isEmpty ? "" : ".\(ext)"
+        var candidate = directory.appendingPathComponent("\(stem)\(suffix)")
         var counter = 2
         while fm.fileExists(atPath: candidate.path) {
-            candidate = directory.appendingPathComponent("\(stem) \(counter).\(ext)")
+            candidate = directory.appendingPathComponent("\(stem) \(counter)\(suffix)")
             counter += 1
         }
         return candidate

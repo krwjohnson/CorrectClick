@@ -10,5 +10,33 @@
     <array>
         <string>com.apple.Terminal</string>
     </array>
+    <!-- Preferences (Epic 7 menu-item toggles) are shared with the Finder
+         Sync extension, which runs in a different sandbox container. They're
+         stored at a real absolute path outside either container, so both
+         sides need explicit access to it — scoped narrowly to just this
+         folder, unlike the extension's broad "/" exception (which it needs
+         for arbitrary file creation). See Shared/MenuItemPreferences.swift. -->
+    <key>com.apple.security.temporary-exception.files.absolute-path.read-write</key>
+    <array>
+        <string>~/Library/Application Support/CorrectClick/</string>
+    </array>
+    <!-- Snippets Import/Export (Epic 2) uses NSOpenPanel/NSSavePanel to let
+         the user pick an arbitrary JSON file — under App Sandbox, reading
+         or writing whatever the user selects through those panels requires
+         this entitlement, separate from the temporary exceptions above. -->
+    <key>com.apple.security.files.user-selected.read-write</key>
+    <true/>
+    <!-- Sparkle (Epic 3) under App Sandbox: lets the app talk to the
+         Installer.xpc and Downloader.xpc services bundled inside
+         Sparkle.framework, which do the actual download/install on the
+         sandboxed app's behalf. $(PRODUCT_BUNDLE_IDENTIFIER) is expanded by
+         Xcode at build time; the -spks/-spki suffixes are Sparkle's fixed
+         naming convention, not something to fill in. No network entitlement
+         needed on the app itself — Downloader.xpc carries its own. -->
+    <key>com.apple.security.temporary-exception.mach-lookup.global-name</key>
+    <array>
+        <string>$(PRODUCT_BUNDLE_IDENTIFIER)-spks</string>
+        <string>$(PRODUCT_BUNDLE_IDENTIFIER)-spki</string>
+    </array>
 </dict>
 </plist>

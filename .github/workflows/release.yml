@@ -22,6 +22,55 @@ jobs:
         with:
           xcode-version: latest-stable
 
+      # Runs before "Run tests" too, not just the DMG build — with a real
+      # DEVELOPMENT_TEAM set in project.yml (applies to every target),
+      # even the test target now needs a valid signing certificate to build.
+      - name: Import signing certificates
+        env:
+          DEVELOPER_CERTIFICATE_P12: ${{ secrets.DEVELOPER_CERTIFICATE_P12 }}
+          DEVELOPER_CERTIFICATE_PASSWORD: ${{ secrets.DEVELOPER_CERTIFICATE_PASSWORD }}
+          DEVELOPER_ID_CERTIFICATE_P12: ${{ secrets.DEVELOPER_ID_CERTIFICATE_P12 }}
+          DEVELOPER_ID_CERTIFICATE_PASSWORD: ${{ secrets.DEVELOPER_ID_CERTIFICATE_PASSWORD }}
+        run: |
+          KEYCHAIN_PATH="$RUNNER_TEMP/signing.keychain-db"
+          KEYCHAIN_PASSWORD="$(openssl rand -base64 32)"
+
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+
+          echo "$DEVELOPER_CERTIFICATE_P12" | base64 --decode -o "$RUNNER_TEMP/dev.p12"
+          echo "$DEVELOPER_ID_CERTIFICATE_P12" | base64 --decode -o "$RUNNER_TEMP/devid.p12"
+
+          # Apple Development signs the archive step; Developer ID Application
+          # re-signs during -exportArchive. Both need to land in this keychain.
+          security import "$RUNNER_TEMP/dev.p12" -k "$KEYCHAIN_PATH" -P "$DEVELOPER_CERTIFICATE_PASSWORD" -T /usr/bin/codesign
+          security import "$RUNNER_TEMP/devid.p12" -k "$KEYCHAIN_PATH" -P "$DEVELOPER_ID_CERTIFICATE_PASSWORD" -T /usr/bin/codesign
+          rm -f "$RUNNER_TEMP/dev.p12" "$RUNNER_TEMP/devid.p12"
+
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+
+          # Add to the search list rather than replacing it, so the runner's
+          # own default keychains (and whatever they hold) stay reachable too.
+          EXISTING_KEYCHAINS="$(security list-keychains -d user | sed 's/"//g')"
+          security list-keychains -d user -s "$KEYCHAIN_PATH" $EXISTING_KEYCHAINS
+
+          echo "KEYCHAIN_PATH=$KEYCHAIN_PATH" >> "$GITHUB_ENV"
+
+      - name: Install build tools
+        run: brew install xcodegen create-dmg
+
+      - name: Generate Xcode project
+        run: xcodegen generate
+
+      - name: Run tests
+        run: |
+          xcodebuild \
+            -project CorrectClick.xcodeproj \
+            -scheme CorrectClickTests \
+            -destination 'platform=macOS' \
+            test
+
       - name: Bump version
         id: version
         run: |
@@ -31,19 +80,33 @@ jobs:
           echo "$NEW" > VERSION
           echo "version=$NEW" >> "$GITHUB_OUTPUT"
 
-      - name: Install build tools
-        run: brew install xcodegen create-dmg
-
-      - name: Build DMG
+      - name: Build, notarize, and package DMG
         env:
           VERSION: ${{ steps.version.outputs.version }}
+          NOTARY_KEY_ID: ${{ secrets.NOTARY_KEY_ID }}
+          NOTARY_ISSUER_ID: ${{ secrets.NOTARY_ISSUER_ID }}
+          NOTARY_API_KEY: ${{ secrets.NOTARY_API_KEY }}
         run: ./scripts/build_dmg.sh
 
-      - name: Commit version bump and tag
+      - name: Download Sparkle tools
+        run: |
+          # Pinned to the same version as project.yml's Sparkle SPM package —
+          # keep these in sync.
+          curl -sL "https://github.com/sparkle-project/Sparkle/releases/download/2.9.6/Sparkle-2.9.6.tar.xz" -o /tmp/Sparkle.tar.xz
+          mkdir -p build/sparkle_tools
+          tar -xJf /tmp/Sparkle.tar.xz -C build/sparkle_tools bin
+
+      - name: Generate appcast entry
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+          SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
+        run: ./scripts/generate_appcast.sh
+
+      - name: Commit version bump, appcast, and tag
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add VERSION
+          git add VERSION appcast.xml
           git commit -m "Bump version to ${{ steps.version.outputs.version }} [skip ci]"
           git tag "v${{ steps.version.outputs.version }}"
           git push origin HEAD:main
@@ -56,5 +119,11 @@ jobs:
           gh release create "v${{ steps.version.outputs.version }}" \
             "build/CorrectClick-${{ steps.version.outputs.version }}.dmg" \
             --title "CorrectClick v${{ steps.version.outputs.version }}" \
-            --notes "Unsigned, ad-hoc build (notarisation not yet set up — see CLAUDE.md). Gatekeeper will require right-click > Open on first launch."
+            --notes "Notarized, Developer ID signed build."
 
+      - name: Clean up signing keychain
+        if: always()
+        run: |
+          if [ -n "${KEYCHAIN_PATH:-}" ] && [ -f "$KEYCHAIN_PATH" ]; then
+            security delete-keychain "$KEYCHAIN_PATH" || true
+          fi

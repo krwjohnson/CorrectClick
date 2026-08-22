@@ -24,6 +24,22 @@ final class StatusBarController {
         enableItem.target = self
         menu.addItem(enableItem)
 
+        let preferencesItem = NSMenuItem(
+            title: "Preferences…",
+            action: #selector(openPreferences),
+            keyEquivalent: ","
+        )
+        preferencesItem.target = self
+        menu.addItem(preferencesItem)
+
+        let checkForUpdatesItem = NSMenuItem(
+            title: "Check for Updates…",
+            action: #selector(checkForUpdates),
+            keyEquivalent: ""
+        )
+        checkForUpdatesItem.target = self
+        menu.addItem(checkForUpdatesItem)
+
         menu.addItem(.separator())
 
         let uninstallItem = NSMenuItem(
@@ -48,6 +64,14 @@ final class StatusBarController {
 
     @objc private func openExtensionPreferences() {
         OnboardingWindowController.shared.show()
+    }
+
+    @objc private func openPreferences() {
+        PreferencesWindowController.shared.show()
+    }
+
+    @objc private func checkForUpdates() {
+        UpdaterManager.shared.checkForUpdates()
     }
 
     @objc private func uninstall() {

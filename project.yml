@@ -1,4 +1,10 @@
 name: CorrectClick
+
+packages:
+  Sparkle:
+    url: https://github.com/sparkle-project/Sparkle
+    from: 2.9.6
+
 options:
   bundleIdPrefix: com.correctclick
   deploymentTarget:
@@ -10,7 +16,7 @@ settings:
   base:
     SWIFT_VERSION: "5.0"
     MACOSX_DEPLOYMENT_TARGET: "13.0"
-    DEVELOPMENT_TEAM: ""  # Set your Apple Developer Team ID here
+    DEVELOPMENT_TEAM: "T4Q97VH6ST"
     ENABLE_HARDENED_RUNTIME: YES
     CODE_SIGN_STYLE: Automatic
     # Local/dev default. Release builds (scripts/build_dmg.sh, CI) override
@@ -27,6 +33,7 @@ targets:
     deploymentTarget: "13.0"
     sources:
       - path: CorrectClick
+      - path: Shared
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.correctclick.CorrectClick
@@ -39,6 +46,7 @@ targets:
         buildPhase: copyFiles
         copy:
           destination: plugins
+      - package: Sparkle
     postBuildScripts:
       - name: Bundle Uninstaller
         script: |
@@ -56,6 +64,7 @@ targets:
     deploymentTarget: "13.0"
     sources:
       - path: CorrectClickExtension
+      - path: Shared
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.correctclick.CorrectClick.FinderSyncExtension
@@ -70,3 +79,20 @@ targets:
           if [ -n "$BUNDLE_ID" ]; then
             pluginkit -e use -i "$BUNDLE_ID" || true
           fi
+
+  CorrectClickTests:
+    type: bundle.unit-test
+    platform: macOS
+    deploymentTarget: "13.0"
+    sources:
+      - path: CorrectClickTests
+      - path: Shared
+      # Pulled in directly (not @testable import) so tests can run as a
+      # standalone bundle with no host application — FileCreator.swift only
+      # needs Cocoa for AppKit-side effects (Finder reveal, keystroke) that
+      # the tests below never touch, just the pure `uniqueURL` naming logic.
+      - path: CorrectClickExtension/FileCreator.swift
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.correctclick.CorrectClickTests
+        GENERATE_INFOPLIST_FILE: YES
