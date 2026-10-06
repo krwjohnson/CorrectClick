@@ -12,6 +12,29 @@ enum BulkRenameUI {
     static func run(for urls: [URL]) {
         guard !urls.isEmpty else { return }
 
+        // Finder invokes menu actions on a background thread. AppKit throws
+        // when an NSAlert is built there, and FIFinderSync catches that
+        // exception and drops it — so without this hop the action silently
+        // does nothing ("FIFinderSync caught an exception while executing
+        // selector" in the log is the only trace).
+        guard Thread.isMainThread else {
+            DispatchQueue.main.async { run(for: urls) }
+            return
+        }
+
+        // A Finder Sync extension runs as a background-only process, which
+        // can't become the active app — activate() alone is a no-op, and the
+        // alert opens behind the front Finder window with no keyboard focus.
+        // Becoming an accessory app (still no Dock icon) is what lets it
+        // come forward. Afterwards it has to hand focus back explicitly —
+        // deactivate() leaves this windowless process as the front app.
+        NSApp.setActivationPolicy(.accessory)
+        NSApp.activate(ignoringOtherApps: true)
+        defer {
+            NSApp.setActivationPolicy(.prohibited)
+            NSRunningApplication.runningApplications(withBundleIdentifier: "com.apple.finder").first?.activate()
+        }
+
         guard let mode = promptForMode(fileCount: urls.count) else { return } // user cancelled
 
         let plan = BulkRenamePlan.plan(for: urls, mode: mode)
@@ -70,7 +93,10 @@ enum BulkRenameUI {
         container.frame = NSRect(x: 0, y: 0, width: 320, height: 140)
 
         alert.accessoryView = container
-        alert.window.initialFirstResponder = findField
+        // Setting initialFirstResponder alone doesn't stick — NSAlert lays
+        // itself out lazily and the cursor ends up in no field at all.
+        alert.layout()
+        alert.window.makeFirstResponder(findField)
 
         guard alert.runModal() == .alertFirstButtonReturn else { return nil }
 
