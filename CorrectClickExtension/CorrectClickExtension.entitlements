@@ -12,5 +12,12 @@
     <array>
         <string>/</string>
     </array>
+    <!-- "New Terminal Tab Here" (Epic 5) scripts Terminal.app/iTerm2 via
+         NSAppleScript to open a window/tab in the target directory. -->
+    <key>com.apple.security.temporary-exception.apple-events</key>
+    <array>
+        <string>com.apple.Terminal</string>
+        <string>com.googlecode.iterm2</string>
+    </array>
 </dict>
 </plist>

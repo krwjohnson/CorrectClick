@@ -4,8 +4,13 @@ import UniformTypeIdentifiers
 struct SnippetsPreferencesView: View {
 
     @State private var templates: [UserTemplate]
+    // Drives the sheet directly via .sheet(item:) — a single Identifiable
+    // optional, not a separate Bool alongside it. Two independently-updated
+    // @State vars (an isPresenting Bool + the item) is a known SwiftUI-on-
+    // macOS trap: the sheet's content closure can evaluate before the item
+    // is observed as non-nil, silently rendering EmptyView() — a blank,
+    // undismissable sheet (no Cancel button ever appears) until force-quit.
     @State private var editingTemplate: UserTemplate?
-    @State private var isPresentingEditor = false
     @State private var statusMessage: String?
 
     private let store = UserTemplateStore.shared
@@ -91,17 +96,15 @@ struct SnippetsPreferencesView: View {
             }
         }
         .background(Color(nsColor: .windowBackgroundColor))
-        .sheet(isPresented: $isPresentingEditor) {
-            if let editingTemplate {
-                TemplateEditorView(
-                    template: editingTemplate,
-                    onSave: { saved in
-                        upsert(saved)
-                        isPresentingEditor = false
-                    },
-                    onCancel: { isPresentingEditor = false }
-                )
-            }
+        .sheet(item: $editingTemplate) { template in
+            TemplateEditorView(
+                template: template,
+                onSave: { saved in
+                    upsert(saved)
+                    editingTemplate = nil
+                },
+                onCancel: { editingTemplate = nil }
+            )
         }
     }
 
@@ -114,12 +117,10 @@ struct SnippetsPreferencesView: View {
             starterContent: "",
             sortOrder: templates.count
         )
-        isPresentingEditor = true
     }
 
     private func edit(_ template: UserTemplate) {
         editingTemplate = template
-        isPresentingEditor = true
     }
 
     private func upsert(_ template: UserTemplate) {

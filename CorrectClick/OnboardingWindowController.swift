@@ -41,8 +41,7 @@ final class OnboardingWindowController: NSObject {
 
     func close() {
         UserDefaults.standard.set(true, forKey: "hasCompletedOnboarding")
-        window?.orderOut(nil)
-        NSApp.setActivationPolicy(.accessory)
+        window?.close() // → windowWillClose, below
     }
 }
 
@@ -50,6 +49,15 @@ extension OnboardingWindowController: NSWindowDelegate {
     func windowDidBecomeKey(_ notification: Notification) {
         // Once the user has focused the window we no longer need it floating.
         dropFloating()
+    }
+
+    /// Covers both the Done button and the title-bar close button. Dropping
+    /// the window (rather than keeping it hidden for reuse) tears down
+    /// `OnboardingView`, which stops its once-a-second extension-enabled
+    /// check; `show()` builds a fresh one next time.
+    func windowWillClose(_ notification: Notification) {
+        window = nil
+        NSApp.setActivationPolicy(.accessory)
     }
 }
 

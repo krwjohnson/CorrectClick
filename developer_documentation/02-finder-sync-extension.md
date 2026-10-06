@@ -1,7 +1,7 @@
 # Finder Sync Extension
 
 ## Version
-1.0.0
+Tracked in the `VERSION` file at the repo root, not in this doc — see [Distribution](06-distribution.md#versioning).
 
 ## What is a Finder Sync Extension?
 
@@ -11,7 +11,7 @@ A Finder Sync Extension is an app extension (`.appex` bundle) that plugs into Fi
 - **Add items to the Finder context menu** for monitored directories
 - **Add a button to the Finder toolbar**
 
-CorrectClick uses only the context menu API. It does not badge files or use the toolbar button.
+CorrectClick uses the context menu and the toolbar button. It does not badge files. The toolbar button exists because right-click menus don't work in cloud folders — see "Cloud folders" below.
 
 ---
 
@@ -64,19 +64,29 @@ This is a standard pattern used by other Finder Sync extensions (e.g. OneDrive, 
 | `contextualMenuForContainer` | User right-clicked the folder background |
 | `toolbarItemMenu` | User clicked the toolbar button |
 
-CorrectClick returns the same menu for all kinds — the actions are equally valid whether the user right-clicked a file or the background of a folder.
+CorrectClick builds the same items for all kinds — the actions are equally valid whether the user right-clicked a file, the background of a folder, or the toolbar button. The only difference is wrapping: right-click menus put everything in a "CorrectClick" submenu (Finder shares that menu with every other extension), while the toolbar button's menu lists the items directly, since the button itself is already CorrectClick.
 
 ```swift
 override func menu(for menuKind: FIMenuKind) -> NSMenu {
+    let items = NSMenu(title: "CorrectClick")
+    populate(items)
+    if menuKind == .toolbarItemMenu { return items }
+
     let menu = NSMenu(title: "")
     let submenuItem = NSMenuItem(title: "CorrectClick", action: nil, keyEquivalent: "")
-    let submenu = NSMenu(title: "CorrectClick")
-    // add items to submenu...
-    submenuItem.submenu = submenu
+    submenuItem.submenu = items
     menu.addItem(submenuItem)
     return menu
 }
 ```
+
+---
+
+## Cloud folders (iCloud Drive, OneDrive, Dropbox)
+
+Since macOS Sonoma, Finder doesn't show **any** Finder Sync extension's right-click menu inside File Provider locations — iCloud Drive, and everything under `~/Library/CloudStorage` (current OneDrive, Dropbox, Google Drive, Box, …). This isn't a conflict with the provider's own extension and it isn't specific to CorrectClick; Apple has confirmed it's by design ([forum thread](https://developer.apple.com/forums/thread/718381), [another](https://developer.apple.com/forums/thread/737283)). Apple's suggested replacements (`FileProviderUI`, `NSFileProviderCustomAction`) only apply to a File Provider domain you own, so they can't add menus to someone else's cloud folder.
+
+Finder Sync **toolbar buttons** are still shown in those locations, so CorrectClick provides one (`toolbarItemName` / `toolbarItemToolTip` / `toolbarItemImage` in `FinderSync.swift`). Users add it once via Finder's **View → Customize Toolbar…**; it opens the same menu for the current folder, and `targetedURL()` / `selectedItemURLs()` behave the same as for a right-click.
 
 The returned `NSMenu` is a **submenu root** — Finder inserts its items into the context menu at the extension's designated position.
 

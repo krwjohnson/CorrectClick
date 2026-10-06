@@ -17,6 +17,31 @@ jobs:
         with:
           fetch-depth: 0
 
+      # The VERSION file is the source of truth — this workflow releases
+      # exactly what it says, never bumps it. To release, run
+      # scripts/set_version.sh X.Y.Z, update RELEASE_NOTES.md, and push. A
+      # push whose VERSION already has a tag (docs, refactors, anything not
+      # meant to ship) still runs the tests but skips every release step.
+      - name: Read version
+        id: version
+        run: |
+          VERSION="$(tr -d '[:space:]' < VERSION)"
+          if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::VERSION file must be MAJOR.MINOR.PATCH, got '$VERSION'"
+            exit 1
+          fi
+          if ! grep -qE "^ *MARKETING_VERSION: \"$VERSION\"$" project.yml; then
+            echo "::error::project.yml's MARKETING_VERSION doesn't match VERSION ($VERSION) — use scripts/set_version.sh"
+            exit 1
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          if git rev-parse -q --verify "refs/tags/v$VERSION" >/dev/null; then
+            echo "v$VERSION is already tagged — running tests only, no release."
+            echo "release=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "release=true" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Select latest Xcode
         uses: maxim-lobanov/setup-xcode@v1
         with:
@@ -71,16 +96,8 @@ jobs:
             -destination 'platform=macOS' \
             test
 
-      - name: Bump version
-        id: version
-        run: |
-          CURRENT="$(cat VERSION 2>/dev/null || echo "1.0.0")"
-          IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT"
-          NEW="${MAJOR}.${MINOR}.$((PATCH + 1))"
-          echo "$NEW" > VERSION
-          echo "version=$NEW" >> "$GITHUB_OUTPUT"
-
       - name: Build, notarize, and package DMG
+        if: steps.version.outputs.release == 'true'
         env:
           VERSION: ${{ steps.version.outputs.version }}
           NOTARY_KEY_ID: ${{ secrets.NOTARY_KEY_ID }}
@@ -89,6 +106,7 @@ jobs:
         run: ./scripts/build_dmg.sh
 
       - name: Download Sparkle tools
+        if: steps.version.outputs.release == 'true'
         run: |
           # Pinned to the same version as project.yml's Sparkle SPM package —
           # keep these in sync.
@@ -97,29 +115,32 @@ jobs:
           tar -xJf /tmp/Sparkle.tar.xz -C build/sparkle_tools bin
 
       - name: Generate appcast entry
+        if: steps.version.outputs.release == 'true'
         env:
           VERSION: ${{ steps.version.outputs.version }}
           SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
         run: ./scripts/generate_appcast.sh
 
-      - name: Commit version bump, appcast, and tag
+      - name: Commit appcast and tag
+        if: steps.version.outputs.release == 'true'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add VERSION appcast.xml
-          git commit -m "Bump version to ${{ steps.version.outputs.version }} [skip ci]"
+          git add appcast.xml
+          git commit -m "Update appcast for ${{ steps.version.outputs.version }} [skip ci]"
           git tag "v${{ steps.version.outputs.version }}"
           git push origin HEAD:main
           git push origin "v${{ steps.version.outputs.version }}"
 
       - name: Create GitHub release
+        if: steps.version.outputs.release == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release create "v${{ steps.version.outputs.version }}" \
             "build/CorrectClick-${{ steps.version.outputs.version }}.dmg" \
             --title "CorrectClick v${{ steps.version.outputs.version }}" \
-            --notes "Notarized, Developer ID signed build."
+            --notes-file RELEASE_NOTES.md
 
       - name: Clean up signing keychain
         if: always()

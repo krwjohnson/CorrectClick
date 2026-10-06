@@ -1,24 +1,31 @@
 # Releasing CorrectClick
 
-Every push to `main` (that isn't itself a `[skip ci]` release commit) runs
+To release: run `./scripts/set_version.sh X.Y.Z`, update `RELEASE_NOTES.md`,
+commit, and push to `main`. The `VERSION` file is the source of truth — CI
+releases exactly what it says and never bumps it. A push whose `VERSION`
+already has a `vX.Y.Z` tag runs the tests and stops there.
+
+Every push to `main` (that isn't itself a `[skip ci]` appcast commit) runs
 `.github/workflows/release.yml`, which:
 
-1. Imports the Developer ID signing certificates into a temporary CI
+1. Reads `VERSION`, checks it matches `project.yml`, and decides whether
+   this push is a release (no tag for that version yet) or test-only.
+2. Imports the Developer ID signing certificates into a temporary CI
    keychain (from GitHub secrets — see "Notarization & signing" below).
-2. Runs `CorrectClickTests` — a failing test aborts here, before anything
-   below touches the repo or publishes anything.
-3. Bumps the patch version in `VERSION`.
+3. Runs `CorrectClickTests` — a failing test aborts here, before anything
+   below touches the repo or publishes anything. Steps 4–8 only run for a
+   release.
 4. Builds, notarizes, and staples `CorrectClick-X.Y.Z.dmg`
    (`scripts/build_dmg.sh`).
 5. Signs a new appcast entry for that DMG (`scripts/generate_appcast.sh`)
    and merges it into the repo's `appcast.xml`.
-6. Commits `VERSION` + `appcast.xml` together, tags `vX.Y.Z`, and pushes
-   both to `main`.
-7. Creates a GitHub Release for that tag with the notarized DMG attached.
+6. Commits `appcast.xml`, tags `vX.Y.Z`, and pushes both to `main`.
+7. Creates a GitHub Release for that tag with the notarized DMG attached and
+   `RELEASE_NOTES.md` as its description.
 8. Deletes the temporary signing keychain.
 
-Nothing here needs manual XML editing, manual notarization, or a manual
-version bump — pushing to `main` is the entire release action.
+Nothing here needs manual XML editing or manual notarization — setting the
+version, writing the notes, and pushing is the entire release action.
 
 ## Notarization & signing
 

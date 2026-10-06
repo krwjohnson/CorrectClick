@@ -1,4 +1,5 @@
 import Cocoa
+import FinderSync
 
 class AppDelegate: NSObject, NSApplicationDelegate {
 
@@ -17,9 +18,13 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
+    /// Opens System Settings straight to the list of Finder extensions, with
+    /// CorrectClick's switch in it. Apple's own API for this, rather than an
+    /// `x-apple.systempreferences:` URL: those pane IDs change between macOS
+    /// releases (the old `com.apple.preferences.extensions` one silently fell
+    /// back to General on macOS 26), and no URL reaches the Finder list
+    /// itself — only the Login Items & Extensions pane above it.
     static func openExtensionPreferences() {
-        if let url = URL(string: "x-apple.systempreferences:com.apple.preferences.extensions") {
-            NSWorkspace.shared.open(url)
-        }
+        FIFinderSyncController.showExtensionManagementInterface()
     }
 }

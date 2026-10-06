@@ -5,20 +5,29 @@
     <!-- Sandboxed parent app — only needs to open System Preferences -->
     <key>com.apple.security.app-sandbox</key>
     <true/>
-    <!-- Lets the Uninstall menu item script Terminal to run the bundled uninstaller -->
-    <key>com.apple.security.temporary-exception.apple-events</key>
-    <array>
-        <string>com.apple.Terminal</string>
-    </array>
     <!-- Preferences (Epic 7 menu-item toggles) are shared with the Finder
          Sync extension, which runs in a different sandbox container. They're
          stored at a real absolute path outside either container, so both
          sides need explicit access to it — scoped narrowly to just this
          folder, unlike the extension's broad "/" exception (which it needs
-         for arbitrary file creation). See Shared/MenuItemPreferences.swift. -->
-    <key>com.apple.security.temporary-exception.files.absolute-path.read-write</key>
+         for arbitrary file creation). See Shared/MenuItemPreferences.swift.
+
+         Uses the home-relative-path key, NOT absolute-path: absolute-path
+         wants a literal, fully-resolved path and does NOT expand "~" — an
+         earlier version of this entitlement used "~/Library/Application
+         Support/CorrectClick/" under absolute-path, which silently denied
+         every write (confirmed via `log stream` showing a real sandboxd
+         deny) because the sandbox matched it as a literal, nonexistent
+         path, not the user's home directory. home-relative-path is the key
+         actually meant for per-user paths — it resolves relative to $HOME
+         with no "~" needed at all. All unit tests passed the whole time
+         because they inject a temp file path that bypasses the entitlement
+         and sandbox mechanism entirely — this only surfaces in a real
+         sandboxed run, which is worth remembering next time something here
+         "should" work per the tests but doesn't in the actual app. -->
+    <key>com.apple.security.temporary-exception.files.home-relative-path.read-write</key>
     <array>
-        <string>~/Library/Application Support/CorrectClick/</string>
+        <string>/Library/Application Support/CorrectClick/</string>
     </array>
     <!-- Snippets Import/Export (Epic 2) uses NSOpenPanel/NSSavePanel to let
          the user pick an arbitrary JSON file — under App Sandbox, reading

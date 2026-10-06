@@ -1,7 +1,7 @@
 # Architecture
 
 ## Version
-1.0.0
+Tracked in the `VERSION` file at the repo root, not in this doc — see [Distribution](06-distribution.md#versioning).
 
 ## Overview
 
@@ -13,7 +13,7 @@ CorrectClick.app                        (parent app — menu bar only)
     └── CorrectClickExtension.appex     (Finder Sync Extension)
 ```
 
-The parent app and the extension are separate processes. They do not communicate with each other in v1.0.0 — the extension handles everything independently.
+The parent app and the extension are separate processes. They do not communicate with each other directly — the extension handles everything independently, and the only thing they share is the preferences/snippets folder described in [Sandboxing and Entitlements](03-sandboxing-and-entitlements.md).
 
 ---
 

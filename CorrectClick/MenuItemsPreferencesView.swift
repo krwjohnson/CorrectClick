@@ -12,6 +12,7 @@ struct MenuItemsPreferencesView: View {
 
     @State private var createRows: [MenuItemRow]
     @State private var clipboardRows: [MenuItemRow]
+    @State private var fileUtilityRows: [MenuItemRow]
 
     private let store = MenuPreferencesStore.shared
 
@@ -19,6 +20,7 @@ struct MenuItemsPreferencesView: View {
         let states = MenuPreferencesStore.shared.load()
         _createRows = State(initialValue: Self.rows(for: .create, states: states))
         _clipboardRows = State(initialValue: Self.rows(for: .clipboard, states: states))
+        _fileUtilityRows = State(initialValue: Self.rows(for: .fileUtility, states: states))
     }
 
     var body: some View {
@@ -56,6 +58,17 @@ struct MenuItemsPreferencesView: View {
                         persist()
                     }
                 }
+
+                Section("File Actions") {
+                    ForEach($fileUtilityRows) { $row in
+                        Toggle(isOn: $row.enabled) { Text(row.title) }
+                            .onChange(of: row.enabled) { _ in persist() }
+                    }
+                    .onMove { indices, newOffset in
+                        fileUtilityRows.move(fromOffsets: indices, toOffset: newOffset)
+                        persist()
+                    }
+                }
             }
             .listStyle(.inset)
         }
@@ -77,6 +90,9 @@ struct MenuItemsPreferencesView: View {
             states.append(MenuItemState(id: row.id, enabled: row.enabled, sortIndex: index))
         }
         for (index, row) in clipboardRows.enumerated() {
+            states.append(MenuItemState(id: row.id, enabled: row.enabled, sortIndex: index))
+        }
+        for (index, row) in fileUtilityRows.enumerated() {
             states.append(MenuItemState(id: row.id, enabled: row.enabled, sortIndex: index))
         }
         store.save(states)

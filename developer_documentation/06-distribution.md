@@ -1,7 +1,7 @@
 # Distribution
 
 ## Version
-Tracked in the `VERSION` file at the repo root, not in this doc — it's bumped automatically by CI on every push to `main` (see below).
+Tracked in the `VERSION` file at the repo root, not in this doc (see "Versioning" below).
 
 ## Overview
 
@@ -11,11 +11,19 @@ CorrectClick is distributed as a direct-download notarised app (`.dmg`). It is n
 
 ## Versioning
 
-Every commit to `main` gets a new patch version, automatically — see `.github/workflows/release.yml`. The `VERSION` file at the repo root is the single source of truth (currently `MAJOR.MINOR.PATCH`, patch bumped every push to `main`); nothing needs to be edited by hand in the normal case.
+The `VERSION` file at the repo root (`MAJOR.MINOR.PATCH`) is the single source of truth. CI releases **exactly** what it says and never changes it — a release happens when you push a `VERSION` that doesn't have a `vX.Y.Z` tag yet. Pushes where `VERSION` is already tagged (docs, refactors, work in progress) still run the tests but publish nothing.
 
-Mechanically: `MARKETING_VERSION`/`CURRENT_PROJECT_VERSION` in `project.yml` are just the *local dev default* (`1.0.0` / `1`). Release builds (CI, or `scripts/build_dmg.sh` run locally) override both at archive time from the `VERSION` file via `xcodebuild ... MARKETING_VERSION=$VERSION CURRENT_PROJECT_VERSION=$VERSION`, so `project.yml` itself never needs a commit just to bump the version. `CorrectClick/Info.plist` and `CorrectClickExtension/Info.plist` read these via `$(MARKETING_VERSION)` / `$(CURRENT_PROJECT_VERSION)`.
+To cut a release:
 
-If you ever need a MINOR or MAJOR bump, edit the `VERSION` file by hand in the same commit — CI only ever increments the last component, it won't reset MINOR/MAJOR for you.
+```bash
+./scripts/set_version.sh 1.2.3   # updates VERSION and project.yml together
+# edit RELEASE_NOTES.md — it becomes the GitHub Release description
+git commit -am "Release 1.2.3" && git push
+```
+
+`scripts/set_version.sh` also writes the version into `project.yml`'s `MARKETING_VERSION`/`CURRENT_PROJECT_VERSION`, so a local Xcode build reports the same version a release would. CI fails the run if the two ever disagree. Release builds (CI, or `scripts/build_dmg.sh` run locally) additionally pass the `VERSION` value explicitly via `xcodebuild ... MARKETING_VERSION=$VERSION CURRENT_PROJECT_VERSION=$VERSION`. `CorrectClick/Info.plist` and `CorrectClickExtension/Info.plist` read these via `$(MARKETING_VERSION)` / `$(CURRENT_PROJECT_VERSION)`.
+
+**Local test builds:** `./scripts/build_dmg.sh` builds whatever `VERSION` says, so it's fine to test the upcoming release locally before pushing. Afterwards, install the published DMG from GitHub Releases on that Mac — Sparkle won't offer an update to a version number that's already installed, so a local test build of X.Y.Z never gets replaced by the real X.Y.Z automatically. Avoid suffixed versions like `1.0.3-test`: they sort ambiguously against the real release, and they're how 1.0.3 and 1.0.4 ended up skipped.
 
 ---
 
@@ -59,14 +67,14 @@ A minimal `ExportOptions.plist` for direct-download (Developer ID) distribution:
 
 ## CI (`.github/workflows/release.yml`)
 
-On every push to `main` (that isn't itself a version-bump commit):
-1. Imports the Developer ID signing certificates into a temporary keychain (from GitHub secrets — see "Notarisation" below)
-2. Runs the test suite
-3. Bumps the patch version in `VERSION`
+On every push to `main` (that isn't itself an `[skip ci]` appcast commit):
+1. Reads `VERSION`, checks it matches `project.yml`, and decides whether this is a release (no `vX.Y.Z` tag yet) or a test-only run
+2. Imports the Developer ID signing certificates into a temporary keychain (from GitHub secrets — see "Notarisation" below)
+3. Runs the test suite — steps 4–8 only run for a release
 4. Runs `scripts/build_dmg.sh` (macOS GitHub-hosted runner; installs `xcodegen`/`create-dmg` via Homebrew first) — this now notarizes and staples both the `.app` and the `.dmg` as part of the same script
 5. Generates a signed appcast entry (see Epic 3 / `RELEASING.md`)
-6. Commits the `VERSION` bump + `appcast.xml` (`[skip ci]`) and tags `vX.Y.Z`, pushes both back to `main`
-7. Publishes a GitHub Release for that tag with the notarized DMG attached
+6. Commits `appcast.xml` (`[skip ci]`) and tags `vX.Y.Z`, pushes both back to `main`
+7. Publishes a GitHub Release for that tag with the notarized DMG attached, using `RELEASE_NOTES.md` as its description
 8. Deletes the temporary signing keychain
 
 Every release build is now a real Developer ID signed, notarized DMG — verified end-to-end (see below), not just wired up untested.
@@ -114,18 +122,18 @@ spctl -a -vvv build/export/CorrectClick.app
 
 ## Creating a DMG
 
-Handled by `scripts/build_dmg.sh` (see above) — it wraps `create-dmg` with the project's icon/background, and also drops a copy of `scripts/uninstall.sh` (as `Uninstall CorrectClick.command`) both inside the app bundle and loose in the DMG. Install `create-dmg` once via `brew install create-dmg` (CI installs it fresh every run).
+Handled by `scripts/build_dmg.sh` (see above) — it wraps `create-dmg` with the project's icon/background. The DMG contains only the app and an Applications shortcut; users uninstall by dragging the app to the Trash (`scripts/uninstall.sh` is a developer-only reset tool and isn't shipped). Install `create-dmg` once via `brew install create-dmg` (CI installs it fresh every run).
 
 The DMG is also notarised and stapled automatically (same script, same credentials) — it notarizes the `.app` first (so the ticket exists before the app is packaged), builds the DMG containing that already-stapled app, then notarizes and staples the DMG itself as a second, separate submission:
 
 ```bash
-xcrun notarytool submit build/CorrectClick-1.0.0.dmg \
+xcrun notarytool submit build/CorrectClick-X.Y.Z.dmg \
   --key-id "KEYID" \
   --issuer "ISSUERID" \
   --key /path/to/AuthKey_KEYID.p8 \
   --wait
 
-xcrun stapler staple build/CorrectClick-1.0.0.dmg
+xcrun stapler staple build/CorrectClick-X.Y.Z.dmg
 ```
 
 ---
@@ -145,10 +153,14 @@ This is a significant architectural change but makes the app fully App Store com
 
 ## Release checklist
 
-Automatic on every push to `main` (via `.github/workflows/release.yml`):
+By hand, in the commit that triggers the release:
+- [ ] `./scripts/set_version.sh X.Y.Z`
+- [ ] Update `RELEASE_NOTES.md`
+
+Automatic once that's pushed to `main` (via `.github/workflows/release.yml`):
 - [x] Import Developer ID signing certificates into a CI keychain
 - [x] Run the test suite
-- [x] Bump patch version (`VERSION` file) and tag `vX.Y.Z`
+- [x] Tag `vX.Y.Z`
 - [x] Archive, export with a real Developer ID signature, build the DMG
 - [x] Notarise the `.app`, staple it
 - [x] Notarise the `.dmg`, staple it
@@ -157,4 +169,3 @@ Automatic on every push to `main` (via `.github/workflows/release.yml`):
 
 Still worth doing manually, at least once, before calling this fully proven:
 - [ ] Test the DMG on a clean Mac (or a separate user account without Xcode) — everything above has been verified locally (`spctl` reports `Notarized Developer ID` on both the `.app` and the copy extracted from the `.dmg`) and via the actual `build_dmg.sh` script CI runs, but not yet via a real download-and-open on a machine that's never seen this app before.
-- [ ] For a MINOR/MAJOR bump, edit `VERSION` by hand in the triggering commit — CI only increments PATCH

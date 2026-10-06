@@ -1,7 +1,7 @@
 # File Creation
 
 ## Version
-1.0.0
+Tracked in the `VERSION` file at the repo root, not in this doc — see [Distribution](06-distribution.md#versioning).
 
 ## Overview
 

@@ -29,5 +29,7 @@
 	</dict>
 	<key>NSUserNotificationAlertStyle</key>
 	<string>alert</string>
+	<key>NSAppleEventsUsageDescription</key>
+	<string>CorrectClick uses Terminal or iTerm2 to open a new tab in the folder you right-clicked, for "New Terminal Tab Here".</string>
 </dict>
 </plist>

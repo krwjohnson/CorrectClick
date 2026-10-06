@@ -14,6 +14,12 @@ import Darwin
 enum MenuItemCategory: String, Codable {
     case create
     case clipboard
+    /// Acts on an existing selection (or the current folder, for "New
+    /// Terminal Here") rather than creating a templated new file — its own
+    /// menu section, gated at build time by more than just enabled/order
+    /// (see FinderSync's applicability checks: e.g. "Extract ZIP" only
+    /// applies to a single selected .zip file).
+    case fileUtility
 }
 
 /// Static description of one built-in menu action. `id` is persisted in
@@ -52,6 +58,25 @@ enum BuiltInMenuItems {
 
         MenuItemDefinition(id: "textFromClipboard", category: .clipboard, title: "New Text File from Clipboard"),
         MenuItemDefinition(id: "pngFromClipboard", category: .clipboard, title: "New PNG from Clipboard"),
+        // Epic 4 additions:
+        MenuItemDefinition(id: "jpgFromClipboard", category: .clipboard, title: "New JPG from Clipboard"),
+        MenuItemDefinition(id: "clipboardAutoDetect", category: .clipboard, title: "New File from Clipboard (Auto-Detect)"),
+        MenuItemDefinition(id: "qrCodeFromClipboard", category: .clipboard, title: "New QR Code from Clipboard"),
+
+        // Epic 4/5/6 additions — act on the current selection/location
+        // rather than creating a templated new file (see MenuItemCategory.fileUtility).
+        MenuItemDefinition(id: "copyBase64", category: .fileUtility, title: "Copy as Base64"),
+        MenuItemDefinition(id: "copyPOSIXPath", category: .fileUtility, title: "Copy POSIX Path"),
+        MenuItemDefinition(id: "copyShellEscapedPath", category: .fileUtility, title: "Copy Shell-Escaped Path"),
+        MenuItemDefinition(id: "copyFileURL", category: .fileUtility, title: "Copy as file:// URL"),
+        MenuItemDefinition(id: "copyMarkdownLink", category: .fileUtility, title: "Copy as Markdown Link"),
+        MenuItemDefinition(id: "newTerminalHere", category: .fileUtility, title: "New Terminal Tab Here"),
+        MenuItemDefinition(id: "generateHash", category: .fileUtility, title: "Copy File Hash (MD5 & SHA-256)"),
+        MenuItemDefinition(id: "compressToZip", category: .fileUtility, title: "Compress to ZIP"),
+        MenuItemDefinition(id: "extractZip", category: .fileUtility, title: "Extract ZIP"),
+        MenuItemDefinition(id: "bulkRename", category: .fileUtility, title: "Bulk Rename…"),
+        MenuItemDefinition(id: "csvToJSON", category: .fileUtility, title: "Convert CSV to JSON"),
+        MenuItemDefinition(id: "jsonToCSV", category: .fileUtility, title: "Convert JSON to CSV"),
     ]
 
     static let byID = Dictionary(uniqueKeysWithValues: all.map { ($0.id, $0) })

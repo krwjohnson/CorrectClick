@@ -115,11 +115,6 @@ echo "=== Building DMG ==="
 mkdir -p "$DMG_SRC_DIR"
 cp -R "$APP_SRC" "$DMG_SRC_DIR/"
 
-# Also drop a loose copy of the uninstaller in the DMG itself (not just inside
-# the app bundle), as a fallback for when the installed app won't launch.
-cp "$REPO/scripts/uninstall.sh" "$DMG_SRC_DIR/Uninstall CorrectClick.command"
-chmod +x "$DMG_SRC_DIR/Uninstall CorrectClick.command"
-
 # Build the DMG's volume icon on the fly from the already-committed asset
 # catalog (scripts/iconbuild/ is gitignored — a local-only intermediate — so
 # this can't depend on it existing, e.g. on a fresh CI checkout). iconutil

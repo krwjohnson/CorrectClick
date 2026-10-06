@@ -1,8 +1,9 @@
 #!/bin/bash
-# Cleanly removes CorrectClick: quits running processes, disables and
-# unregisters the Finder Sync extension, deletes the installed app, and
-# clears saved preferences/state so the machine is back to a fresh-install
-# state.
+# Developer tool: resets a machine to a never-installed state — quits
+# running processes, disables and unregisters the Finder Sync extension,
+# deletes the installed app, and clears saved preferences/snippets/state.
+# Handy for testing first-run onboarding. Not shipped to users (they
+# uninstall by dragging the app to the Trash — see README).
 #
 # Usage: ./scripts/uninstall.sh [--yes]
 #   --yes   skip the confirmation prompt (for scripted/automated use)
@@ -27,7 +28,7 @@ confirm() {
 echo "This will remove CorrectClick and all its saved state:"
 echo "  - $APP_PATH"
 echo "  - Finder Sync extension registration"
-echo "  - Preferences and sandbox container data"
+echo "  - Preferences, snippets, and sandbox container data"
 echo ""
 confirm "Continue?" || { echo "Aborted."; exit 0; }
 
@@ -59,6 +60,10 @@ fi
 
 echo "=== Removing preferences and sandbox container data ==="
 rm -f ~/Library/Preferences/"$APP_BUNDLE_ID".plist
+# Menu-item preferences, snippets, and author name — shared by the app and
+# the extension, so they live outside both sandbox containers (see
+# RealHomeDirectory in Shared/MenuItemPreferences.swift).
+rm -rf ~/Library/Application\ Support/CorrectClick 2>/dev/null || true
 CONTAINERS_FAILED=false
 rm -rf ~/Library/Containers/"$APP_BUNDLE_ID" 2>/dev/null || CONTAINERS_FAILED=true
 rm -rf ~/Library/Containers/"$EXT_BUNDLE_ID" 2>/dev/null || CONTAINERS_FAILED=true

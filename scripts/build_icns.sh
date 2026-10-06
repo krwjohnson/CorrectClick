@@ -1,6 +1,10 @@
 #!/bin/bash
 # Generates all icon sizes from a 1024x1024 source PNG and produces an .icns file.
 # Usage: ./scripts/build_icns.sh
+#
+# The 1024 source (scripts/iconbuild/icon_1024.png, gitignored) comes from the
+# committed artwork via:
+#   swift scripts/make_app_icon.swift scripts/icon_source.jpg scripts/iconbuild/icon_1024.png
 
 set -e
 REPO="$(cd "$(dirname "$0")/.." && pwd)"
